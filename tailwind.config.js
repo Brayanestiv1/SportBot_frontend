@@ -1,5 +1,7 @@
-const tailwindcssAnimate = require("tailwindcss-animate");
-const tailwindScrollbar = require("tailwind-scrollbar");
+// tailwind.config.js
+
+import tailwindcssAnimate from "tailwindcss-animate";
+import tailwindScrollbar from "tailwind-scrollbar";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -10,6 +12,8 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [],
-}
-
+  plugins: [
+    tailwindcssAnimate,
+    tailwindScrollbar,
+  ],
+};
