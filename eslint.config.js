@@ -7,6 +7,7 @@ import { globalIgnores } from 'eslint/config'
 
 export default tseslint.config([
   globalIgnores(['dist']),
+  // Configuración para archivos TypeScript
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -19,5 +20,18 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+  },
+  // ---
+  // AÑADIR ESTA NUEVA CONFIGURACIÓN PARA ARCHIVOS JAVASCRIPT
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      globals: globals.browser,
+    },
+    extends: [
+      js.configs.recommended,
+    ],
   },
 ])
