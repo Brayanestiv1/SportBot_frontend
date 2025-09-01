@@ -10,5 +10,3 @@ services:
     # Abrir el puerto 5173 para acceder a la aplicación desde el navegador.
     ports:
       - "5173:5173"
-    # El comando para mantener el contenedor en ejecución.
-    command: sleep infinity

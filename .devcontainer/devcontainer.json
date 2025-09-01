@@ -16,5 +16,6 @@
       ]
     }
   },
-  "postCreateCommand": "npm run dev"
+  "postCreateCommand": "npm run dev",
+  "forwardPorts": [5173]
 }

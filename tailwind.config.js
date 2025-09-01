@@ -1,8 +1,3 @@
-// tailwind.config.js
-
-import tailwindcssAnimate from "tailwindcss-animate";
-import tailwindScrollbar from "tailwind-scrollbar";
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -12,8 +7,5 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [
-    tailwindcssAnimate,
-    tailwindScrollbar,
-  ],
-};
+  plugins: [],
+}

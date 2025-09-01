@@ -1,6 +1,6 @@
 # Usa una imagen base de Dev Containers de Microsoft para Node.js.
-# Esta imagen ya incluye Git y otras herramientas esenciales.
-FROM mcr.microsoft.com/devcontainers/javascript-node:18
+# Se usa la versión 20 para compatibilidad con las últimas dependencias.
+FROM mcr.microsoft.com/devcontainers/javascript-node:20
 
 # Instala paquetes adicionales que necesites, como zip y unzip.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copia los archivos de manifiesto de dependencias para aprovechar la caché de Docker
-COPY package*.json ./
+COPY package.*json ./
 
 # Instala las dependencias del proyecto
 RUN npm install
