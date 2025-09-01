@@ -11,9 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copia los archivos de manifiesto de dependencias para aprovechar la caché de Docker
 COPY package.*json ./
 
-# Instala las dependencias del proyecto
-RUN npm install
-
 # Copia el resto del código de la aplicación.
 # Por defecto, Docker lo copiará en el directorio de trabajo del volumen.
 COPY . .

@@ -16,6 +16,12 @@
       ]
     }
   },
-  "postCreateCommand": "npm run dev",
-  "forwardPorts": [5173]
+  "postStartCommand": "npm install && npm run dev -- --port 5174",
+  "forwardPorts": [5174],
+  "portsAttributes": {
+    "5174": {
+      "label": "Vite",
+      "onAutoForward": "openBrowser"
+    }
+  }
 }
