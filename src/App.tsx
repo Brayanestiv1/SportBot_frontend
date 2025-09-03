@@ -254,13 +254,40 @@ const App: React.FC = () => {
 
   // Función para obtener el último mensaje de un usuario
   const getLastMessage = (userId: number) => {
+    // Primero intentar obtener del historial de chat si ya está cargado
+    const userChatHistory = chatHistory[userId];
+    if (userChatHistory && userChatHistory.length > 0) {
+      // Obtener el último mensaje del historial (ya está ordenado por timestamp)
+      const lastMessage = userChatHistory[userChatHistory.length - 1];
+      if (lastMessage && lastMessage.message) {
+        // Truncar solo para el sidebar, no para el chat completo
+        if (lastMessage.message.length > 50) {
+          return lastMessage.message.substring(0, 50) + '...';
+        }
+        return lastMessage.message;
+      }
+    }
+    
+    // Si no hay historial cargado, usar el resumen de chats
     const userChats = chatSummaries.filter(chat => chat.usuarioId === userId);
     if (userChats.length > 0) {
       // Ordenar por fecha de actualización y tomar el más reciente
       const mostRecent = userChats.sort((a, b) => 
         new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
       )[0];
-      return mostRecent.ultimoMensaje;
+      
+      // Si el último mensaje está vacío o es muy largo, truncarlo para el sidebar
+      const lastMessage = mostRecent.ultimoMensaje;
+      if (!lastMessage || lastMessage === 'string' || lastMessage === 'No hay mensajes') {
+        return 'No hay mensajes';
+      }
+      
+      // Truncar solo para el sidebar, no para el chat completo
+      if (lastMessage.length > 50) {
+        return lastMessage.substring(0, 50) + '...';
+      }
+      
+      return lastMessage;
     }
     return 'No hay mensajes';
   };
@@ -387,7 +414,7 @@ const App: React.FC = () => {
                       className={`flex ${msg.isUser ? "justify-end" : "justify-start"} mb-4`}
                     >
                       <div
-                        className={`max-w-2xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
+                        className={`max-w-4xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
                           msg.isUser
                             ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
                             : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
@@ -402,9 +429,18 @@ const App: React.FC = () => {
                           </p>
                         </div>
                         {/* Mensaje completo sin truncar */}
-                        <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
-                          {msg.message}
-                        </p>
+                        <div className="text-base leading-relaxed">
+                          <div 
+                            className="whitespace-pre-wrap break-words"
+                            style={{ 
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              maxWidth: '100%'
+                            }}
+                          >
+                            {msg.message}
+                          </div>
+                        </div>
                         {/* Solo la hora del mensaje */}
                         <p className={`text-xs mt-3 opacity-70 ${msg.isUser ? "text-blue-100" : "text-gray-400"}`}>
                           {formatMessageTime(msg.timestamp)}
