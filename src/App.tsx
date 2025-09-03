@@ -105,32 +105,32 @@ const App: React.FC = () => {
       
       for (const chat of userChats) {
         try {
-          console.log(`Intentando obtener summary del chat ${chat.chatId}`);
-          
-          // Usar el endpoint de summary que SÍ existe
-          const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${chat.chatId}/summary`);
-          console.log(`Summary endpoint status para ${chat.chatId}:`, summaryResponse.status);
-          
-          if (summaryResponse.ok) {
-            const summaryData: ChatSummaryResponse = await summaryResponse.json();
-            console.log(`Summary data para ${chat.chatId}:`, summaryData);
-            
-            // Procesar los mensajes de la conversación
-            const processedMessages = summaryData.conversation.map((msg, index) => ({
-              id: index + 1,
-              message: msg.contenido,
-              timestamp: msg.timestamp,
-              isUser: msg.tipo === 'usuario'
-            }));
-            
-            allMessages.push(...processedMessages);
-            console.log(`Mensajes procesados para ${chat.chatId}:`, processedMessages);
-          } else {
-            console.log(`Error en summary endpoint para ${chat.chatId}: ${summaryResponse.status}`);
-          }
-        } catch (chatErr) {
-          console.error(`Error obteniendo summary del chat ${chat.chatId}:`, chatErr);
-        }
+                     console.log(`Intentando obtener summary del chat ${chat.id}`);
+           
+           // Usar el endpoint de summary que SÍ existe
+           const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${chat.id}/summary`);
+           console.log(`Summary endpoint status para ${chat.id}:`, summaryResponse.status);
+           
+           if (summaryResponse.ok) {
+             const summaryData: ChatSummaryResponse = await summaryResponse.json();
+             console.log(`Summary data para ${chat.id}:`, summaryData);
+             
+             // Procesar los mensajes de la conversación
+             const processedMessages = summaryData.conversation.map((msg, index) => ({
+               id: index + 1,
+               message: msg.contenido,
+               timestamp: msg.timestamp,
+               isUser: msg.tipo === 'usuario'
+             }));
+             
+             allMessages.push(...processedMessages);
+             console.log(`Mensajes procesados para ${chat.id}:`, processedMessages);
+           } else {
+             console.log(`Error en summary endpoint para ${chat.id}: ${summaryResponse.status}`);
+           }
+         } catch (chatErr) {
+           console.error(`Error obteniendo summary del chat ${chat.id}:`, chatErr);
+         }
       }
 
       // Ordenar todos los mensajes por timestamp
@@ -300,18 +300,18 @@ const App: React.FC = () => {
                  const chatData = await chatResponse.json();
                  console.log('Admin chats data:', chatData);
                  
-                 // Si hay chats, probar el endpoint de summary del primer chat
-                 if (chatData.length > 0) {
-                   const firstChat = chatData[0];
-                   console.log('Probando summary para el primer chat:', firstChat.chatId);
-                   
-                   const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${firstChat.chatId}/summary`);
-                   console.log('Summary endpoint status:', summaryResponse.status);
-                   if (summaryResponse.ok) {
-                     const summaryData = await summaryResponse.json();
-                     console.log('Summary data:', summaryData);
-                   }
-                 }
+                                   // Si hay chats, probar el endpoint de summary del primer chat
+                  if (chatData.length > 0) {
+                    const firstChat = chatData[0];
+                    console.log('Probando summary para el primer chat:', firstChat.id);
+                    
+                    const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${firstChat.id}/summary`);
+                    console.log('Summary endpoint status:', summaryResponse.status);
+                    if (summaryResponse.ok) {
+                      const summaryData = await summaryResponse.json();
+                      console.log('Summary data:', summaryData);
+                    }
+                  }
                }
              } catch (err) {
                console.error('Error probando admin chats endpoint:', err);
