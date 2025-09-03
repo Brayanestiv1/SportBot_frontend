@@ -342,14 +342,14 @@ const App: React.FC = () => {
           users.map((user) => (
                          <div
                key={user.id}
-               className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
-                 selectedUserId === user.id ? 'bg-blue-600 shadow-lg' : 'bg-gray-800'
-               }`}
+                               className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
+                  selectedUserId === user.id ? 'bg-blue-500/80 shadow-lg' : 'bg-gray-800'
+                }`}
                onClick={() => setSelectedUserId(user.id)}
              >
-               <div className="w-12 h-12 bg-gray- from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                 {getUserName(user).charAt(0)}
-               </div>
+                               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg border-2 border-blue-300/30">
+                  {getUserName(user).charAt(0)}
+                </div>
                <div className="flex-1 min-w-0">
                  <p className="font-semibold text-lg text-white truncate">{getUserName(user)}</p>
                  <p className="text-sm text-gray-200 truncate">{getLastMessage(user.id)}</p>
