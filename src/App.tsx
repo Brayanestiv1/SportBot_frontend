@@ -8,6 +8,7 @@ interface User {
   id: number;
   nombre?: string; // Campo que puede venir del backend
   name?: string;   // Campo alternativo
+  telefono?: string; // Número de teléfono del usuario
   // Otros campos que pueda tener el usuario
 }
 
@@ -377,7 +378,14 @@ const App: React.FC = () => {
                  <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
                    {selectedUser ? getUserName(selectedUser).charAt(0) : '?'}
                  </span>
-                 Chat con {selectedUser ? getUserName(selectedUser) : 'Usuario'}
+                 <div>
+                   <div>Chat con {selectedUser ? getUserName(selectedUser) : 'Usuario'}</div>
+                   {selectedUser?.telefono && (
+                     <div className="text-sm text-gray-300 font-normal mt-1">
+                       📞 {selectedUser.telefono}
+                     </div>
+                   )}
+                 </div>
                </h2>
              </div>
              
