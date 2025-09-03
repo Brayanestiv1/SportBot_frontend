@@ -82,7 +82,7 @@ const App: React.FC = () => {
     }
   };
 
-    // Función para obtener el historial de chat de un usuario específico
+  // Función para obtener el historial de chat de un usuario específico
   const fetchUserChatHistory = async (userId: number) => {
     try {
       console.log(`Intentando obtener historial para usuario ${userId}`);
@@ -105,32 +105,32 @@ const App: React.FC = () => {
       
       for (const chat of userChats) {
         try {
-                     console.log(`Intentando obtener summary del chat ${chat.id}`);
-           
-           // Usar el endpoint de summary que SÍ existe
-           const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${chat.id}/summary`);
-           console.log(`Summary endpoint status para ${chat.id}:`, summaryResponse.status);
-           
-           if (summaryResponse.ok) {
-             const summaryData: ChatSummaryResponse = await summaryResponse.json();
-             console.log(`Summary data para ${chat.id}:`, summaryData);
-             
-             // Procesar los mensajes de la conversación
-             const processedMessages = summaryData.conversation.map((msg, index) => ({
-               id: index + 1,
-               message: msg.contenido,
-               timestamp: msg.timestamp,
-               isUser: msg.tipo === 'usuario'
-             }));
-             
-             allMessages.push(...processedMessages);
-             console.log(`Mensajes procesados para ${chat.id}:`, processedMessages);
-           } else {
-             console.log(`Error en summary endpoint para ${chat.id}: ${summaryResponse.status}`);
-           }
-         } catch (chatErr) {
-           console.error(`Error obteniendo summary del chat ${chat.id}:`, chatErr);
-         }
+          console.log(`Intentando obtener summary del chat ${chat.id}`);
+          
+          // Usar el endpoint de summary que SÍ existe
+          const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${chat.id}/summary`);
+          console.log(`Summary endpoint status para ${chat.id}:`, summaryResponse.status);
+          
+          if (summaryResponse.ok) {
+            const summaryData: ChatSummaryResponse = await summaryResponse.json();
+            console.log(`Summary data para ${chat.id}:`, summaryData);
+            
+            // Procesar los mensajes de la conversación
+            const processedMessages = summaryData.conversation.map((msg, index) => ({
+              id: index + 1,
+              message: msg.contenido,
+              timestamp: msg.timestamp,
+              isUser: msg.tipo === 'usuario'
+            }));
+            
+            allMessages.push(...processedMessages);
+            console.log(`Mensajes procesados para ${chat.id}:`, processedMessages);
+          } else {
+            console.log(`Error en summary endpoint para ${chat.id}: ${summaryResponse.status}`);
+          }
+        } catch (chatErr) {
+          console.error(`Error obteniendo summary del chat ${chat.id}:`, chatErr);
+        }
       }
 
       // Ordenar todos los mensajes por timestamp
@@ -161,7 +161,52 @@ const App: React.FC = () => {
     }
   };
 
+  // Función para formatear fecha como WhatsApp
+  const formatMessageDate = (timestamp: string) => {
+    const messageDate = new Date(timestamp);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const messageDay = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
 
+    if (messageDay.getTime() === today.getTime()) {
+      return 'Hoy';
+    } else if (messageDay.getTime() === yesterday.getTime()) {
+      return 'Ayer';
+    } else {
+      return messageDate.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+  };
+
+  // Función para formatear hora del mensaje
+  const formatMessageTime = (timestamp: string) => {
+    const messageDate = new Date(timestamp);
+    return messageDate.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Función para agrupar mensajes por fecha
+  const groupMessagesByDate = (messages: ChatMessage[]) => {
+    const groups: { [key: string]: ChatMessage[] } = {};
+    
+    messages.forEach(message => {
+      const dateKey = formatMessageDate(message.timestamp);
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(message);
+    });
+    
+    return groups;
+  };
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -265,6 +310,9 @@ const App: React.FC = () => {
     );
   }
 
+  // Agrupar mensajes por fecha para mostrar separadores
+  const groupedMessages = groupMessagesByDate(selectedChat);
+
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100">
       {/* Lista de usuarios (sidebar) */}
@@ -272,55 +320,6 @@ const App: React.FC = () => {
         <h2 className="text-3xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-4">
           💬 Chats
         </h2>
-        {/* Botón de debug para probar endpoints */}
-        <button 
-          onClick={async () => {
-            console.log('=== DEBUG INFO ===');
-            console.log('Usuarios:', users);
-            console.log('Chat Summaries:', chatSummaries);
-            console.log('Chat History:', chatHistory);
-            
-            // Probar endpoint de usuarios
-            try {
-              const userResponse = await fetch('http://localhost:8000/api/v1/usuarios/');
-              console.log('Usuarios endpoint status:', userResponse.status);
-              if (userResponse.ok) {
-                const userData = await userResponse.json();
-                console.log('Usuarios data:', userData);
-              }
-            } catch (err) {
-              console.error('Error probando usuarios endpoint:', err);
-            }
-            
-                         // Probar endpoint de admin chats
-             try {
-               const chatResponse = await fetch('http://localhost:8000/api/v1/admin/chats/');
-               console.log('Admin chats endpoint status:', chatResponse.status);
-               if (chatResponse.ok) {
-                 const chatData = await chatResponse.json();
-                 console.log('Admin chats data:', chatData);
-                 
-                                   // Si hay chats, probar el endpoint de summary del primer chat
-                  if (chatData.length > 0) {
-                    const firstChat = chatData[0];
-                    console.log('Probando summary para el primer chat:', firstChat.id);
-                    
-                    const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${firstChat.id}/summary`);
-                    console.log('Summary endpoint status:', summaryResponse.status);
-                    if (summaryResponse.ok) {
-                      const summaryData = await summaryResponse.json();
-                      console.log('Summary data:', summaryData);
-                    }
-                  }
-               }
-             } catch (err) {
-               console.error('Error probando admin chats endpoint:', err);
-             }
-          }}
-          className="mb-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-        >
-          🐛 Debug Endpoints
-        </button>
         {users.length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <div className="text-2xl mb-2">📭</div>
@@ -349,9 +348,9 @@ const App: React.FC = () => {
       </div>
 
       {/* Historial de chat */}
-      <div className="w-3/4 p-6 bg-gray-900 overflow-y-auto relative">
-        {/* Fondo con imagen personalizada */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
+      <div className="w-3/4 bg-gray-900 overflow-y-auto relative">
+        {/* Fondo con imagen personalizada - FIXED para scroll */}
+        <div className="fixed inset-0 opacity-20 pointer-events-none">
           <div className="absolute inset-0" style={{
             backgroundImage: 'url(/fondo.jpg)',
             backgroundSize: '300px 300px',
@@ -361,7 +360,7 @@ const App: React.FC = () => {
         </div>
         
         {selectedUserId ? (
-          <div className="relative z-10">
+          <div className="relative z-10 p-6">
             <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
               <h2 className="text-2xl font-bold text-blue-400 flex items-center">
                 <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
@@ -372,31 +371,47 @@ const App: React.FC = () => {
             </div>
             
             <div className="space-y-4">
-              {selectedChat.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-md p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
-                      msg.isUser
-                        ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
-                        : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
-                    }`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <span className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 shadow-sm">
-                        {msg.isUser ? (selectedUser ? getUserName(selectedUser).charAt(0) : '?') : "🤖"}
-                      </span>
-                      <p className="text-sm font-semibold">
-                        {msg.isUser ? (selectedUser ? getUserName(selectedUser) : 'Usuario') : "IA"}
-                      </p>
+              {Object.entries(groupedMessages).map(([date, messages]) => (
+                <div key={date}>
+                  {/* Separador de fecha estilo WhatsApp */}
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-gray-700/80 backdrop-blur-sm text-gray-300 text-sm px-4 py-2 rounded-full border border-gray-600">
+                      {date}
                     </div>
-                    <p className="text-base leading-relaxed">{msg.message}</p>
-                    <p className={`text-xs mt-3 opacity-70 ${msg.isUser ? "text-blue-100" : "text-gray-400"}`}>
-                      {msg.timestamp}
-                    </p>
                   </div>
+                  
+                  {/* Mensajes de esta fecha */}
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.isUser ? "justify-end" : "justify-start"} mb-4`}
+                    >
+                      <div
+                        className={`max-w-2xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
+                          msg.isUser
+                            ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
+                            : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-center mb-2">
+                          <span className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 shadow-sm">
+                            {msg.isUser ? (selectedUser ? getUserName(selectedUser).charAt(0) : '?') : "🤖"}
+                          </span>
+                          <p className="text-sm font-semibold">
+                            {msg.isUser ? (selectedUser ? getUserName(selectedUser) : 'Usuario') : "IA"}
+                          </p>
+                        </div>
+                        {/* Mensaje completo sin truncar */}
+                        <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                          {msg.message}
+                        </p>
+                        {/* Solo la hora del mensaje */}
+                        <p className={`text-xs mt-3 opacity-70 ${msg.isUser ? "text-blue-100" : "text-gray-400"}`}>
+                          {formatMessageTime(msg.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -409,7 +424,7 @@ const App: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="text-center text-gray-400 text-lg bg-gray-800/90 backdrop-blur-sm rounded-xl p-12 border border-gray-700 shadow-lg relative z-10">
+          <div className="text-center text-gray-400 text-lg bg-gray-800/90 backdrop-blur-sm rounded-xl p-12 border border-gray-700 shadow-lg relative z-10 m-6">
             <div className="text-6xl mb-4">💬</div>
             <h3 className="text-2xl font-bold text-blue-400 mb-4">Bienvenido a SportBot</h3>
             <p className="text-gray-300">Selecciona un usuario para ver sus chats</p>
