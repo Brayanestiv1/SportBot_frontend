@@ -303,7 +303,7 @@ const App: React.FC = () => {
   if (error) {
     return (
       <div className="flex h-screen bg-gray-900 text-gray-100 items-center justify-center">
-        <div className="text-center bg-gray-800/90 backdrop-blur-sm rounded-xl p-8 border border-gray-700">
+                 <div className="text-center bg-gray-800 rounded-xl p-8 border border-gray-700">
           <div className="text-4xl mb-4">⚠️</div>
           <h3 className="text-2xl font-bold text-red-400 mb-4">Error de conexión</h3>
           <p className="text-gray-300 mb-4">{error}</p>
@@ -448,15 +448,15 @@ const App: React.FC = () => {
               ))}
             </div>
             
-            {selectedChat.length === 0 && (
-              <div className="text-center text-gray-400 text-lg bg-gray-800/90 backdrop-blur-sm rounded-xl p-8 border border-gray-700">
-                <div className="text-4xl mb-4">💬</div>
-                No hay mensajes en este chat.
-              </div>
-            )}
+                         {selectedChat.length === 0 && (
+               <div className="text-center text-gray-400 text-lg bg-gray-800 rounded-xl p-8 border border-gray-700">
+                 <div className="text-4xl mb-4">💬</div>
+                 No hay mensajes en este chat.
+               </div>
+             )}
           </div>
         ) : (
-          <div className="text-center text-gray-400 text-lg bg-gray-800/90 backdrop-blur-sm rounded-xl p-12 border border-gray-700 shadow-lg relative z-10 m-6">
+                     <div className="text-center text-gray-400 text-lg bg-gray-800 rounded-xl p-12 border border-gray-700 shadow-lg relative z-10 m-6">
             <div className="text-6xl mb-4">💬</div>
             <h3 className="text-2xl font-bold text-blue-400 mb-4">Bienvenido a SportBot</h3>
             <p className="text-gray-300">Selecciona un usuario para ver sus chats</p>
