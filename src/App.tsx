@@ -1,9 +1,18 @@
 
 import './App.css'
 import './index.css'
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-// Definir tipos TypeScript
+// Definir tipos TypeScript para una base de datos real de chat
+interface ChatMessage {
+  id: number;
+  message: string;
+  timestamp: string;
+  isUser: boolean;
+  userId?: number; // ID del usuario que envió el mensaje
+  userName?: string; // Nombre del usuario
+}
+
 interface User {
   id: number;
   name: string;
@@ -12,46 +21,159 @@ interface User {
   unread: boolean;
 }
 
-interface ChatMessage {
-  id: number;
-  message: string;
-  timestamp: string;
-  isUser: boolean;
-}
-
 interface ChatHistory {
   [key: number]: ChatMessage[];
 }
 
-// Datos simulados (placeholder para la base de datos)
-const users: User[] = [
-  { id: 1, name: "Juan Pérez", lastMessage: "Hola, ¿horarios?", timestamp: "2025-08-13 10:30", unread: false },
-  { id: 2, name: "María Gómez", lastMessage: "¿Clases para niños?", timestamp: "2025-08-13 14:15", unread: true },
-  { id: 3, name: "Carlos López", lastMessage: "¿Costo mensual?", timestamp: "2025-08-13 09:00", unread: false },
-];
-
-const chatHistory: ChatHistory = {
-  1: [
-    { id: 1, message: "Hola, ¿cuáles son los horarios?", timestamp: "2025-08-13 10:30", isUser: true },
-    { id: 2, message: "Lunes y miércoles 18:00-19:30, sábados 10:00-11:30.", timestamp: "2025-08-13 10:31", isUser: false },
-    { id: 3, message: "¿Y para principiantes?", timestamp: "2025-08-13 10:35", isUser: true },
-    { id: 4, message: "Sí, tenemos clases para principiantes los lunes.", timestamp: "2025-08-13 10:36", isUser: false },
-  ],
-  2: [
-    { id: 1, message: "¿Hay clases para niños de 8 años?", timestamp: "2025-08-13 14:15", isUser: true },
-    { id: 2, message: "Sí, martes y jueves a las 17:00.", timestamp: "2025-08-13 14:16", isUser: false },
-  ],
-  3: [
-    { id: 1, message: "¿Cuánto cuesta la mensualidad?", timestamp: "2025-08-13 09:00", isUser: true },
-    { id: 2, message: "La mensualidad es de $50, incluye clases y eventos.", timestamp: "2025-08-13 09:01", isUser: false },
-  ],
-};
-
 const App: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatHistory>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Función para obtener todos los chats y extraer usuarios únicos
+  const fetchChatsAndUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/chats');
+      if (!response.ok) {
+        throw new Error(`Error al obtener chats: ${response.status}`);
+      }
+      const allChats: ChatMessage[] = await response.json();
+      
+      // Agrupar mensajes por usuario
+      const chatByUser: ChatHistory = {};
+      const userMap = new Map<number, User>();
+      
+      allChats.forEach((chat) => {
+        if (chat.userId && chat.userName) {
+          const userId = chat.userId;
+          
+          // Agregar mensaje al historial del usuario
+          if (!chatByUser[userId]) {
+            chatByUser[userId] = [];
+          }
+          chatByUser[userId].push(chat);
+          
+          // Crear o actualizar información del usuario
+          if (!userMap.has(userId)) {
+            userMap.set(userId, {
+              id: userId,
+              name: chat.userName,
+              lastMessage: chat.message,
+              timestamp: chat.timestamp,
+              unread: false
+            });
+          } else {
+            // Actualizar último mensaje si es más reciente
+            const existingUser = userMap.get(userId)!;
+            if (new Date(chat.timestamp) > new Date(existingUser.timestamp)) {
+              existingUser.lastMessage = chat.message;
+              existingUser.timestamp = chat.timestamp;
+            }
+          }
+        }
+      });
+      
+      // Ordenar mensajes por timestamp en cada chat
+      Object.keys(chatByUser).forEach(userId => {
+        chatByUser[parseInt(userId)].sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+      });
+      
+      // Convertir usuarios a array y ordenar por último mensaje
+      const usersArray = Array.from(userMap.values()).sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      
+      setChatHistory(chatByUser);
+      setUsers(usersArray);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching chats:', err);
+      setError('Error al cargar los chats');
+      setLoading(false);
+    }
+  };
+
+
+
+  // Función para obtener el historial de chat de un usuario específico
+  const fetchChatHistory = async (userId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/chats/${userId}`);
+      if (!response.ok) {
+        throw new Error(`Error al obtener chat: ${response.status}`);
+      }
+      const data = await response.json();
+      setChatHistory(prev => ({
+        ...prev,
+        [userId]: data
+      }));
+    } catch (err) {
+      console.error('Error fetching chat history:', err);
+      setError('Error al cargar el historial del chat');
+    }
+  };
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    fetchChatsAndUsers();
+  }, []);
+
+  // Cargar historial de chat cuando se selecciona un usuario (si no está ya cargado)
+  useEffect(() => {
+    if (selectedUserId && !chatHistory[selectedUserId]) {
+      fetchChatHistory(selectedUserId);
+    }
+  }, [selectedUserId, chatHistory]);
+
+  // Marcar como leído cuando se selecciona un usuario
+  useEffect(() => {
+    if (selectedUserId) {
+      setUsers(prev => prev.map(user => 
+        user.id === selectedUserId ? { ...user, unread: false } : user
+      ));
+    }
+  }, [selectedUserId]);
 
   const selectedChat: ChatMessage[] = selectedUserId ? chatHistory[selectedUserId] || [] : [];
   const selectedUser = selectedUserId ? users.find((u) => u.id === selectedUserId) : null;
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-900 text-gray-100 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-xl text-blue-400">Cargando chats...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-900 text-gray-100 items-center justify-center">
+        <div className="text-center bg-gray-800/90 backdrop-blur-sm rounded-xl p-8 border border-gray-700">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-2xl font-bold text-red-400 mb-4">Error de conexión</h3>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button 
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetchChatsAndUsers();
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100">
@@ -60,24 +182,34 @@ const App: React.FC = () => {
         <h2 className="text-3xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-4">
           💬 Chats
         </h2>
-        {users.map((user) => (
-          <div
-            key={user.id}
-            className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
-              selectedUserId === user.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-gray-700'
-            }`}
-            onClick={() => setSelectedUserId(user.id)}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-              {user.name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-lg text-gray-100 truncate">{user.name}</p>
-              <p className="text-sm text-gray-400 truncate">{user.lastMessage}</p>
-              <p className="text-xs text-gray-500 mt-1">{user.timestamp}</p>
-            </div>
+        {users.length === 0 ? (
+          <div className="text-center text-gray-400 py-8">
+            <div className="text-2xl mb-2">📭</div>
+            No hay chats disponibles
           </div>
-        ))}
+        ) : (
+          users.map((user) => (
+            <div
+              key={user.id}
+              className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
+                selectedUserId === user.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-gray-700'
+              }`}
+              onClick={() => setSelectedUserId(user.id)}
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                {user.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-lg text-gray-100 truncate">{user.name}</p>
+                <p className="text-sm text-gray-400 truncate">{user.lastMessage}</p>
+                <p className="text-xs text-gray-500 mt-1">{user.timestamp}</p>
+                {user.unread && (
+                  <div className="w-3 h-3 bg-red-500 rounded-full mt-2"></div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Historial de chat */}
