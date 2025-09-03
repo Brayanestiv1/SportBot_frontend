@@ -13,10 +13,10 @@ interface User {
 
 interface ChatSummary {
   id: number;
-  chatid: string;
-  ultinoMensaje: string;
+  chatId: string; // Cambiado de chatid a chatId
+  ultimoMensaje: string;
   totalMensajes: number;
-  ussariold: number;
+  usuarioId: number; // Cambiado de ussariold a usuarioId
   fechaCreacion: string;
   fechaActualizcion: string;
 }
@@ -31,6 +31,17 @@ interface ChatMessage {
 
 interface ChatHistory {
   [key: number]: ChatMessage[];
+}
+
+// Nueva interfaz para la respuesta del endpoint summary
+interface ChatSummaryResponse {
+  chat_id: number;
+  message_count: number;
+  conversation: Array<{
+    tipo: 'usuario' | 'bot';
+    contenido: string;
+    timestamp: string;
+  }>;
 }
 
 const App: React.FC = () => {
@@ -71,27 +82,79 @@ const App: React.FC = () => {
     }
   };
 
-  // Función para obtener el historial de chat de un usuario específico
+    // Función para obtener el historial de chat de un usuario específico
   const fetchUserChatHistory = async (userId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/chats/usuario/${userId}`);
-      if (!response.ok) {
-        throw new Error(`Error al obtener chat del usuario: ${response.status}`);
-      }
-      const data = await response.json();
+      console.log(`Intentando obtener historial para usuario ${userId}`);
       
-             // Procesar los datos del chat del usuario
-       const processedMessages: ChatMessage[] = data.map((msg: Record<string, unknown>, index: number) => ({
-         id: (msg.id as number) || index,
-         message: (msg.message as string) || (msg.contenido as string) || (msg.texto as string) || 'Mensaje sin contenido',
-         timestamp: (msg.timestamp as string) || (msg.fecha as string) || (msg.created_at as string) || new Date().toISOString(),
-         isUser: msg.isUser !== undefined ? (msg.isUser as boolean) : true // Por defecto asumimos que es del usuario
-       }));
+      // Primero intentamos obtener los chats del usuario desde el endpoint de admin
+      const userChats = chatSummaries.filter(chat => chat.usuarioId === userId);
+      console.log(`Chats encontrados para usuario ${userId}:`, userChats);
+      
+      if (userChats.length === 0) {
+        console.log(`No se encontraron chats para el usuario ${userId}`);
+        setChatHistory(prev => ({
+          ...prev,
+          [userId]: []
+        }));
+        return;
+      }
+
+      // Obtener el historial de cada chat del usuario usando el endpoint de summary
+      const allMessages: ChatMessage[] = [];
+      
+      for (const chat of userChats) {
+        try {
+          console.log(`Intentando obtener summary del chat ${chat.chatId}`);
+          
+          // Usar el endpoint de summary que SÍ existe
+          const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${chat.chatId}/summary`);
+          console.log(`Summary endpoint status para ${chat.chatId}:`, summaryResponse.status);
+          
+          if (summaryResponse.ok) {
+            const summaryData: ChatSummaryResponse = await summaryResponse.json();
+            console.log(`Summary data para ${chat.chatId}:`, summaryData);
+            
+            // Procesar los mensajes de la conversación
+            const processedMessages = summaryData.conversation.map((msg, index) => ({
+              id: index + 1,
+              message: msg.contenido,
+              timestamp: msg.timestamp,
+              isUser: msg.tipo === 'usuario'
+            }));
+            
+            allMessages.push(...processedMessages);
+            console.log(`Mensajes procesados para ${chat.chatId}:`, processedMessages);
+          } else {
+            console.log(`Error en summary endpoint para ${chat.chatId}: ${summaryResponse.status}`);
+          }
+        } catch (chatErr) {
+          console.error(`Error obteniendo summary del chat ${chat.chatId}:`, chatErr);
+        }
+      }
+
+      // Ordenar todos los mensajes por timestamp
+      allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      // Si no se pudieron obtener mensajes de los endpoints, crear un mensaje de prueba
+      if (allMessages.length === 0) {
+        console.log(`Creando mensaje de prueba para usuario ${userId}`);
+        const testMessage: ChatMessage = {
+          id: 1,
+          message: `Este es un mensaje de prueba para el usuario ${userId}. Los endpoints de chat no están devolviendo datos.`,
+          timestamp: new Date().toISOString(),
+          isUser: false
+        };
+        allMessages.push(testMessage);
+      }
+
+      console.log(`Total de mensajes para usuario ${userId}:`, allMessages);
 
       setChatHistory(prev => ({
         ...prev,
-        [userId]: processedMessages
+        [userId]: allMessages
       }));
+
     } catch (err) {
       console.error('Error fetching user chat history:', err);
       setError('Error al cargar el historial del chat');
@@ -146,20 +209,20 @@ const App: React.FC = () => {
 
   // Función para obtener el último mensaje de un usuario
   const getLastMessage = (userId: number) => {
-    const userChats = chatSummaries.filter(chat => chat.ussariold === userId);
+    const userChats = chatSummaries.filter(chat => chat.usuarioId === userId);
     if (userChats.length > 0) {
       // Ordenar por fecha de actualización y tomar el más reciente
       const mostRecent = userChats.sort((a, b) => 
         new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
       )[0];
-      return mostRecent.ultinoMensaje;
+      return mostRecent.ultimoMensaje;
     }
     return 'No hay mensajes';
   };
 
   // Función para obtener la fecha del último mensaje
   const getLastMessageDate = (userId: number) => {
-    const userChats = chatSummaries.filter(chat => chat.ussariold === userId);
+    const userChats = chatSummaries.filter(chat => chat.usuarioId === userId);
     if (userChats.length > 0) {
       const mostRecent = userChats.sort((a, b) => 
         new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
@@ -209,6 +272,55 @@ const App: React.FC = () => {
         <h2 className="text-3xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-4">
           💬 Chats
         </h2>
+        {/* Botón de debug para probar endpoints */}
+        <button 
+          onClick={async () => {
+            console.log('=== DEBUG INFO ===');
+            console.log('Usuarios:', users);
+            console.log('Chat Summaries:', chatSummaries);
+            console.log('Chat History:', chatHistory);
+            
+            // Probar endpoint de usuarios
+            try {
+              const userResponse = await fetch('http://localhost:8000/api/v1/usuarios/');
+              console.log('Usuarios endpoint status:', userResponse.status);
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                console.log('Usuarios data:', userData);
+              }
+            } catch (err) {
+              console.error('Error probando usuarios endpoint:', err);
+            }
+            
+                         // Probar endpoint de admin chats
+             try {
+               const chatResponse = await fetch('http://localhost:8000/api/v1/admin/chats/');
+               console.log('Admin chats endpoint status:', chatResponse.status);
+               if (chatResponse.ok) {
+                 const chatData = await chatResponse.json();
+                 console.log('Admin chats data:', chatData);
+                 
+                 // Si hay chats, probar el endpoint de summary del primer chat
+                 if (chatData.length > 0) {
+                   const firstChat = chatData[0];
+                   console.log('Probando summary para el primer chat:', firstChat.chatId);
+                   
+                   const summaryResponse = await fetch(`http://localhost:8000/api/v1/admin/chats/${firstChat.chatId}/summary`);
+                   console.log('Summary endpoint status:', summaryResponse.status);
+                   if (summaryResponse.ok) {
+                     const summaryData = await summaryResponse.json();
+                     console.log('Summary data:', summaryData);
+                   }
+                 }
+               }
+             } catch (err) {
+               console.error('Error probando admin chats endpoint:', err);
+             }
+          }}
+          className="mb-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+        >
+          🐛 Debug Endpoints
+        </button>
         {users.length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <div className="text-2xl mb-2">📭</div>
