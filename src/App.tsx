@@ -370,40 +370,46 @@ const App: React.FC = () => {
           }}></div>
         </div>
         
-        {selectedUserId ? (
-          <div className="relative z-10 p-6">
-            <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
-              <h2 className="text-2xl font-bold text-blue-400 flex items-center">
-                <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
-                  {selectedUser ? getUserName(selectedUser).charAt(0) : '?'}
-                </span>
-                Chat con {selectedUser ? getUserName(selectedUser) : 'Usuario'}
-              </h2>
-            </div>
+                 {selectedUserId ? (
+           <div className="relative z-10 p-6" style={{ height: 'auto', minHeight: 'fit-content' }}>
+             <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
+               <h2 className="text-2xl font-bold text-blue-400 flex items-center">
+                 <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
+                   {selectedUser ? getUserName(selectedUser).charAt(0) : '?'}
+                 </span>
+                 Chat con {selectedUser ? getUserName(selectedUser) : 'Usuario'}
+               </h2>
+             </div>
             
-            <div className="space-y-4">
-              {Object.entries(groupedMessages).map(([date, messages]) => (
-                <div key={date}>
-                  {/* Separador de fecha estilo WhatsApp */}
-                  <div className="flex justify-center mb-4">
-                    <div className="bg-gray-700/80 backdrop-blur-sm text-gray-300 text-sm px-4 py-2 rounded-full border border-gray-600">
-                      {date}
-                    </div>
-                  </div>
-                  
-                  {/* Mensajes de esta fecha */}
-                  {messages.map((msg) => (
+                         <div className="space-y-4" style={{ height: 'auto', minHeight: 'fit-content' }}>
+               {Object.entries(groupedMessages).map(([date, messages]) => (
+                 <div key={date} style={{ height: 'auto', minHeight: 'fit-content' }}>
+                   {/* Separador de fecha estilo WhatsApp */}
+                   <div className="flex justify-center mb-4">
+                     <div className="bg-gray-700/80 backdrop-blur-sm text-gray-300 text-sm px-4 py-2 rounded-full border border-gray-600">
+                       {date}
+                     </div>
+                   </div>
+                   
+                   {/* Mensajes de esta fecha */}
+                   {messages.map((msg) => (
                     <div
                       key={msg.id}
                       className={`flex ${msg.isUser ? "justify-end" : "justify-start"} mb-4`}
                     >
-                      <div
-                        className={`max-w-4xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
-                          msg.isUser
-                            ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
-                            : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
-                        }`}
-                      >
+                                             <div
+                         className={`max-w-4xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
+                           msg.isUser
+                             ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
+                             : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
+                         }`}
+                         style={{
+                           height: 'auto',
+                           minHeight: 'fit-content',
+                           width: 'fit-content',
+                           maxWidth: '100%'
+                         }}
+                       >
                         <div className="flex items-center mb-2">
                           <span className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 shadow-sm">
                             {msg.isUser ? (selectedUser ? getUserName(selectedUser).charAt(0) : '?') : "🤖"}
@@ -412,19 +418,21 @@ const App: React.FC = () => {
                             {msg.isUser ? (selectedUser ? getUserName(selectedUser) : 'Usuario') : "IA"}
                           </p>
                         </div>
-                        {/* Mensaje completo sin truncar */}
-                        <div 
-                          className="text-base leading-relaxed whitespace-pre-wrap break-words"
-                          style={{ 
-                            wordBreak: 'break-word',
-                            overflowWrap: 'anywhere',
-                            hyphens: 'auto',
-                            width: '100%',
-                            display: 'block'
-                          }}
-                        >
-                          {msg.message}
-                        </div>
+                                                 {/* Mensaje completo sin truncar */}
+                         <div 
+                           className="text-base leading-relaxed whitespace-pre-wrap break-words"
+                           style={{ 
+                             wordBreak: 'break-word',
+                             overflowWrap: 'anywhere',
+                             hyphens: 'auto',
+                             width: 'fit-content',
+                             minWidth: '100%',
+                             display: 'block',
+                             height: 'auto'
+                           }}
+                         >
+                           {msg.message}
+                         </div>
                         {/* Solo la hora del mensaje */}
                         <p className={`text-xs mt-3 opacity-70 ${msg.isUser ? "text-blue-100" : "text-gray-400"}`}>
                           {formatMessageTime(msg.timestamp)}
