@@ -347,7 +347,7 @@ const App: React.FC = () => {
                }`}
                onClick={() => setSelectedUserId(user.id)}
              >
-               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+               <div className="w-12 h-12 bg-gray- from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                  {getUserName(user).charAt(0)}
                </div>
                <div className="flex-1 min-w-0">
