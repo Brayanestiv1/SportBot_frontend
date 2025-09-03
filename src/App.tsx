@@ -2,6 +2,7 @@
 import './App.css'
 import './index.css'
 import React, { useState, useEffect } from "react";
+import { config } from './config';
 
 // Definir tipos TypeScript basados en los endpoints reales del backend
 interface User {
@@ -56,7 +57,7 @@ const App: React.FC = () => {
   // Función para obtener todos los usuarios
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/usuarios/');
+      const response = await fetch(config.USERS_ENDPOINT);
       if (!response.ok) {
         throw new Error(`Error al obtener usuarios: ${response.status}`);
       }
@@ -327,8 +328,8 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100">
-      {/* Lista de usuarios (sidebar) */}
-      <div className="w-1/4 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto shadow-lg">
+             {/* Lista de usuarios (sidebar) */}
+       <div className="w-1/4 bg-gray-900 border-r border-gray-700 p-4 overflow-y-auto shadow-lg">
         <h2 className="text-3xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-4">
           💬 Chats
         </h2>
