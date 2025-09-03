@@ -254,13 +254,18 @@ const App: React.FC = () => {
 
   // Función para obtener el último mensaje de un usuario
   const getLastMessage = (userId: number) => {
-    // Primero intentar obtener del historial de chat si ya está cargado
+    // Solo mostrar mensaje si el historial del chat ya está cargado
     const userChatHistory = chatHistory[userId];
-    if (userChatHistory && userChatHistory.length > 0) {
+    if (!userChatHistory) {
+      return 'Selecciona para ver el chat';
+    }
+    
+    // Si hay historial cargado, obtener el último mensaje real
+    if (userChatHistory.length > 0) {
       // Obtener el último mensaje del historial (ya está ordenado por timestamp)
       const lastMessage = userChatHistory[userChatHistory.length - 1];
       if (lastMessage && lastMessage.message) {
-        // Truncar solo para el sidebar, no para el chat completo
+        // Truncar solo para el sidebar (mostrar primeros 50 caracteres)
         if (lastMessage.message.length > 50) {
           return lastMessage.message.substring(0, 50) + '...';
         }
@@ -268,27 +273,6 @@ const App: React.FC = () => {
       }
     }
     
-    // Si no hay historial cargado, usar el resumen de chats
-    const userChats = chatSummaries.filter(chat => chat.usuarioId === userId);
-    if (userChats.length > 0) {
-      // Ordenar por fecha de actualización y tomar el más reciente
-      const mostRecent = userChats.sort((a, b) => 
-        new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
-      )[0];
-      
-      // Si el último mensaje está vacío o es muy largo, truncarlo para el sidebar
-      const lastMessage = mostRecent.ultimoMensaje;
-      if (!lastMessage || lastMessage === 'string' || lastMessage === 'No hay mensajes') {
-        return 'No hay mensajes';
-      }
-      
-      // Truncar solo para el sidebar, no para el chat completo
-      if (lastMessage.length > 50) {
-        return lastMessage.substring(0, 50) + '...';
-      }
-      
-      return lastMessage;
-    }
     return 'No hay mensajes';
   };
 
@@ -429,17 +413,17 @@ const App: React.FC = () => {
                           </p>
                         </div>
                         {/* Mensaje completo sin truncar */}
-                        <div className="text-base leading-relaxed">
-                          <div 
-                            className="whitespace-pre-wrap break-words"
-                            style={{ 
-                              wordBreak: 'break-word',
-                              overflowWrap: 'break-word',
-                              maxWidth: '100%'
-                            }}
-                          >
-                            {msg.message}
-                          </div>
+                        <div 
+                          className="text-base leading-relaxed whitespace-pre-wrap break-words"
+                          style={{ 
+                            wordBreak: 'break-word',
+                            overflowWrap: 'anywhere',
+                            hyphens: 'auto',
+                            width: '100%',
+                            display: 'block'
+                          }}
+                        >
+                          {msg.message}
                         </div>
                         {/* Solo la hora del mensaje */}
                         <p className={`text-xs mt-3 opacity-70 ${msg.isUser ? "text-blue-100" : "text-gray-400"}`}>
