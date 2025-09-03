@@ -339,22 +339,22 @@ const App: React.FC = () => {
           </div>
         ) : (
           users.map((user) => (
-            <div
-              key={user.id}
-              className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
-                selectedUserId === user.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-gray-700'
-              }`}
-              onClick={() => setSelectedUserId(user.id)}
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {getUserName(user).charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-lg text-gray-100 truncate">{getUserName(user)}</p>
-                <p className="text-sm text-gray-400 truncate">{getLastMessage(user.id)}</p>
-                <p className="text-xs text-gray-500 mt-1">{getLastMessageDate(user.id)}</p>
-              </div>
-            </div>
+                         <div
+               key={user.id}
+               className={`flex items-center p-4 cursor-pointer rounded-xl mb-3 transition-all duration-200 hover:bg-gray-700 hover:shadow-lg ${
+                 selectedUserId === user.id ? 'bg-blue-600 shadow-lg' : 'bg-gray-800'
+               }`}
+               onClick={() => setSelectedUserId(user.id)}
+             >
+               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                 {getUserName(user).charAt(0)}
+               </div>
+               <div className="flex-1 min-w-0">
+                 <p className="font-semibold text-lg text-white truncate">{getUserName(user)}</p>
+                 <p className="text-sm text-gray-200 truncate">{getLastMessage(user.id)}</p>
+                 <p className="text-xs text-gray-300 mt-1">{getLastMessageDate(user.id)}</p>
+               </div>
+             </div>
           ))
         )}
       </div>
@@ -373,7 +373,7 @@ const App: React.FC = () => {
         
                  {selectedUserId ? (
                       <div className="relative z-10 p-6">
-             <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
+                           <div className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
                <h2 className="text-2xl font-bold text-blue-400 flex items-center">
                  <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
                    {selectedUser ? getUserName(selectedUser).charAt(0) : '?'}
@@ -394,7 +394,7 @@ const App: React.FC = () => {
                  <div key={date}>
                    {/* Separador de fecha estilo WhatsApp */}
                    <div className="flex justify-center mb-4">
-                     <div className="bg-gray-700/80 backdrop-blur-sm text-gray-300 text-sm px-4 py-2 rounded-full border border-gray-600">
+                     <div className="bg-gray-700 text-white text-sm px-4 py-2 rounded-full border border-gray-600">
                        {date}
                      </div>
                    </div>
@@ -406,10 +406,10 @@ const App: React.FC = () => {
                       className={`flex ${msg.isUser ? "justify-end" : "justify-start"} mb-4`}
                     >
                                              <div
-                         className={`max-w-2xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
+                         className={`max-w-2xl p-4 rounded-2xl shadow-lg transition-all duration-200 hover:scale-105 ${
                            msg.isUser
-                             ? "bg-gradient-to-r from-blue-500/95 to-blue-600/95 text-white border border-blue-400/30"
-                             : "bg-gray-800/90 border border-gray-600/50 text-gray-100"
+                             ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border border-blue-400"
+                             : "bg-gray-800 border border-gray-600 text-white"
                          }`}
                          style={{
                            height: 'auto',
