@@ -3,22 +3,30 @@ import './App.css'
 import './index.css'
 import React, { useState, useEffect } from "react";
 
-// Definir tipos TypeScript para una base de datos real de chat
+// Definir tipos TypeScript basados en los endpoints reales del backend
+interface User {
+  id: number;
+  nombre?: string; // Campo que puede venir del backend
+  name?: string;   // Campo alternativo
+  // Otros campos que pueda tener el usuario
+}
+
+interface ChatSummary {
+  id: number;
+  chatid: string;
+  ultinoMensaje: string;
+  totalMensajes: number;
+  ussariold: number;
+  fechaCreacion: string;
+  fechaActualizcion: string;
+}
+
 interface ChatMessage {
   id: number;
   message: string;
   timestamp: string;
   isUser: boolean;
-  userId?: number; // ID del usuario que envió el mensaje
-  userName?: string; // Nombre del usuario
-}
-
-interface User {
-  id: number;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: boolean;
+  // Otros campos que pueda tener el mensaje
 }
 
 interface ChatHistory {
@@ -29,118 +37,137 @@ const App: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatHistory>({});
+  const [chatSummaries, setChatSummaries] = useState<ChatSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para obtener todos los chats y extraer usuarios únicos
-  const fetchChatsAndUsers = async () => {
+  // Función para obtener todos los usuarios
+  const fetchUsers = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('http://localhost:8000/api/chats');
+      const response = await fetch('http://localhost:8000/api/v1/usuarios/');
       if (!response.ok) {
-        throw new Error(`Error al obtener chats: ${response.status}`);
+        throw new Error(`Error al obtener usuarios: ${response.status}`);
       }
-      const allChats: ChatMessage[] = await response.json();
-      
-      // Agrupar mensajes por usuario
-      const chatByUser: ChatHistory = {};
-      const userMap = new Map<number, User>();
-      
-      allChats.forEach((chat) => {
-        if (chat.userId && chat.userName) {
-          const userId = chat.userId;
-          
-          // Agregar mensaje al historial del usuario
-          if (!chatByUser[userId]) {
-            chatByUser[userId] = [];
-          }
-          chatByUser[userId].push(chat);
-          
-          // Crear o actualizar información del usuario
-          if (!userMap.has(userId)) {
-            userMap.set(userId, {
-              id: userId,
-              name: chat.userName,
-              lastMessage: chat.message,
-              timestamp: chat.timestamp,
-              unread: false
-            });
-          } else {
-            // Actualizar último mensaje si es más reciente
-            const existingUser = userMap.get(userId)!;
-            if (new Date(chat.timestamp) > new Date(existingUser.timestamp)) {
-              existingUser.lastMessage = chat.message;
-              existingUser.timestamp = chat.timestamp;
-            }
-          }
-        }
-      });
-      
-      // Ordenar mensajes por timestamp en cada chat
-      Object.keys(chatByUser).forEach(userId => {
-        chatByUser[parseInt(userId)].sort((a, b) => 
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-      });
-      
-      // Convertir usuarios a array y ordenar por último mensaje
-      const usersArray = Array.from(userMap.values()).sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      
-      setChatHistory(chatByUser);
-      setUsers(usersArray);
-      setLoading(false);
+      const data = await response.json();
+      setUsers(data);
     } catch (err) {
-      console.error('Error fetching chats:', err);
-      setError('Error al cargar los chats');
-      setLoading(false);
+      console.error('Error fetching users:', err);
+      setError('Error al cargar la lista de usuarios');
     }
   };
 
-
-
-  // Función para obtener el historial de chat de un usuario específico
-  const fetchChatHistory = async (userId: number) => {
+  // Función para obtener todos los chats (admin)
+  const fetchAllChats = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/chats/${userId}`);
+      const response = await fetch('http://localhost:8000/api/v1/admin/chats/');
       if (!response.ok) {
-        throw new Error(`Error al obtener chat: ${response.status}`);
+        throw new Error(`Error al obtener chats: ${response.status}`);
       }
       const data = await response.json();
+      setChatSummaries(data);
+    } catch (err) {
+      console.error('Error fetching all chats:', err);
+      setError('Error al cargar los chats');
+    }
+  };
+
+  // Función para obtener el historial de chat de un usuario específico
+  const fetchUserChatHistory = async (userId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/chats/usuario/${userId}`);
+      if (!response.ok) {
+        throw new Error(`Error al obtener chat del usuario: ${response.status}`);
+      }
+      const data = await response.json();
+      
+             // Procesar los datos del chat del usuario
+       const processedMessages: ChatMessage[] = data.map((msg: Record<string, unknown>, index: number) => ({
+         id: (msg.id as number) || index,
+         message: (msg.message as string) || (msg.contenido as string) || (msg.texto as string) || 'Mensaje sin contenido',
+         timestamp: (msg.timestamp as string) || (msg.fecha as string) || (msg.created_at as string) || new Date().toISOString(),
+         isUser: msg.isUser !== undefined ? (msg.isUser as boolean) : true // Por defecto asumimos que es del usuario
+       }));
+
       setChatHistory(prev => ({
         ...prev,
-        [userId]: data
+        [userId]: processedMessages
       }));
     } catch (err) {
-      console.error('Error fetching chat history:', err);
+      console.error('Error fetching user chat history:', err);
       setError('Error al cargar el historial del chat');
     }
   };
 
+
+
   // Cargar datos al montar el componente
   useEffect(() => {
-    fetchChatsAndUsers();
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        // Cargar usuarios y chats en paralelo
+        await Promise.all([
+          fetchUsers(),
+          fetchAllChats()
+        ]);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error loading initial data:', err);
+        setError('Error al cargar los datos iniciales');
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
-  // Cargar historial de chat cuando se selecciona un usuario (si no está ya cargado)
+  // Cargar historial de chat cuando se selecciona un usuario
   useEffect(() => {
-    if (selectedUserId && !chatHistory[selectedUserId]) {
-      fetchChatHistory(selectedUserId);
+    if (selectedUserId) {
+      fetchUserChatHistory(selectedUserId);
     }
-  }, [selectedUserId, chatHistory]);
+  }, [selectedUserId]);
 
   // Marcar como leído cuando se selecciona un usuario
   useEffect(() => {
     if (selectedUserId) {
-      setUsers(prev => prev.map(user => 
-        user.id === selectedUserId ? { ...user, unread: false } : user
-      ));
+      // Aquí podrías implementar la lógica para marcar como leído
+      // Por ahora solo actualizamos el estado local
     }
   }, [selectedUserId]);
 
   const selectedChat: ChatMessage[] = selectedUserId ? chatHistory[selectedUserId] || [] : [];
   const selectedUser = selectedUserId ? users.find((u) => u.id === selectedUserId) : null;
+
+  // Función para obtener el nombre del usuario
+  const getUserName = (user: User) => {
+    return user.nombre || user.name || `Usuario ${user.id}`;
+  };
+
+  // Función para obtener el último mensaje de un usuario
+  const getLastMessage = (userId: number) => {
+    const userChats = chatSummaries.filter(chat => chat.ussariold === userId);
+    if (userChats.length > 0) {
+      // Ordenar por fecha de actualización y tomar el más reciente
+      const mostRecent = userChats.sort((a, b) => 
+        new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
+      )[0];
+      return mostRecent.ultinoMensaje;
+    }
+    return 'No hay mensajes';
+  };
+
+  // Función para obtener la fecha del último mensaje
+  const getLastMessageDate = (userId: number) => {
+    const userChats = chatSummaries.filter(chat => chat.ussariold === userId);
+    if (userChats.length > 0) {
+      const mostRecent = userChats.sort((a, b) => 
+        new Date(b.fechaActualizcion).getTime() - new Date(a.fechaActualizcion).getTime()
+      )[0];
+      return mostRecent.fechaActualizcion;
+    }
+    return '';
+  };
 
   if (loading) {
     return (
@@ -164,7 +191,7 @@ const App: React.FC = () => {
             onClick={() => {
               setError(null);
               setLoading(true);
-              fetchChatsAndUsers();
+              Promise.all([fetchUsers(), fetchAllChats()]).finally(() => setLoading(false));
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
@@ -185,7 +212,7 @@ const App: React.FC = () => {
         {users.length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <div className="text-2xl mb-2">📭</div>
-            No hay chats disponibles
+            No hay usuarios disponibles
           </div>
         ) : (
           users.map((user) => (
@@ -197,15 +224,12 @@ const App: React.FC = () => {
               onClick={() => setSelectedUserId(user.id)}
             >
               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mr-4 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {user.name.charAt(0)}
+                {getUserName(user).charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-lg text-gray-100 truncate">{user.name}</p>
-                <p className="text-sm text-gray-400 truncate">{user.lastMessage}</p>
-                <p className="text-xs text-gray-500 mt-1">{user.timestamp}</p>
-                {user.unread && (
-                  <div className="w-3 h-3 bg-red-500 rounded-full mt-2"></div>
-                )}
+                <p className="font-semibold text-lg text-gray-100 truncate">{getUserName(user)}</p>
+                <p className="text-sm text-gray-400 truncate">{getLastMessage(user.id)}</p>
+                <p className="text-xs text-gray-500 mt-1">{getLastMessageDate(user.id)}</p>
               </div>
             </div>
           ))
@@ -229,9 +253,9 @@ const App: React.FC = () => {
             <div className="bg-gray-800/90 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
               <h2 className="text-2xl font-bold text-blue-400 flex items-center">
                 <span className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow-lg">
-                  {selectedUser?.name.charAt(0)}
+                  {selectedUser ? getUserName(selectedUser).charAt(0) : '?'}
                 </span>
-                Chat con {selectedUser?.name}
+                Chat con {selectedUser ? getUserName(selectedUser) : 'Usuario'}
               </h2>
             </div>
             
@@ -250,10 +274,10 @@ const App: React.FC = () => {
                   >
                     <div className="flex items-center mb-2">
                       <span className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 shadow-sm">
-                        {msg.isUser ? selectedUser?.name.charAt(0) : "🤖"}
+                        {msg.isUser ? (selectedUser ? getUserName(selectedUser).charAt(0) : '?') : "🤖"}
                       </span>
                       <p className="text-sm font-semibold">
-                        {msg.isUser ? selectedUser?.name : "IA"}
+                        {msg.isUser ? (selectedUser ? getUserName(selectedUser) : 'Usuario') : "IA"}
                       </p>
                     </div>
                     <p className="text-base leading-relaxed">{msg.message}</p>
@@ -276,7 +300,7 @@ const App: React.FC = () => {
           <div className="text-center text-gray-400 text-lg bg-gray-800/90 backdrop-blur-sm rounded-xl p-12 border border-gray-700 shadow-lg relative z-10">
             <div className="text-6xl mb-4">💬</div>
             <h3 className="text-2xl font-bold text-blue-400 mb-4">Bienvenido a SportBot</h3>
-            <p className="text-gray-300">Selecciona un chat para comenzar a conversar</p>
+            <p className="text-gray-300">Selecciona un usuario para ver sus chats</p>
           </div>
         )}
       </div>
