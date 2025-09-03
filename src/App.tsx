@@ -363,7 +363,7 @@ const App: React.FC = () => {
       {/* Historial de chat */}
       <div className="w-3/4 bg-gray-900 overflow-y-auto relative">
         {/* Fondo con imagen personalizada - FIXED para scroll */}
-        <div className="fixed inset-0 opacity-20 pointer-events-none">
+        <div className="fixed inset-0 opacity-20 pointer-events-none" style={{ left: '25%' }}>
           <div className="absolute inset-0" style={{
             backgroundImage: 'url(/fondo.jpg)',
             backgroundSize: '300px 300px',
